@@ -162,7 +162,8 @@ bind('bCrouch', 'arrowdown');
 
 /* ============ 关卡数据 ============ */
 // kind: ground 地面 / poop 粑粑 / pipe 管道 / garbage 垃圾堆
-let platforms = [], rats = [], finish = {x:6250, y:620, r:48}, currentLevel = 1, spawn = {x:80, y:620};
+let platforms = [], rats = [], traps = [], finish = {x:6250, y:620, r:48}, currentLevel = 1, spawn = {x:80, y:620};
+let hasTrap = false, danmu = [];   // 老鼠夹状态 + 弹幕列表
 
 const LEVELS = {
   1: {
@@ -199,6 +200,7 @@ const LEVELS = {
       { x:5200, w:44, h:30, speed:3.0, pi:20 },
       { x:5950, w:44, h:30, speed:3.2, pi:23 },
     ],
+    traps: [],
     finish: { x:6250, y:620, r:48 },
     spawn: { x:80, y:620 },
   },
@@ -236,6 +238,12 @@ const LEVELS = {
       { x:4250, w:44, h:30, speed:3.3, pi:19 },
       { x:4950, w:44, h:30, speed:3.5, pi:22 },
     ],
+    traps: [
+      { x:2640, y:415 },
+      { x:2960, y:415 },
+      { x:3825, y:425 },
+      { x:4125, y:425 },
+    ],
     finish: { x:5480, y:620, r:48 },
     spawn: { x:80, y:620 },
   },
@@ -247,7 +255,10 @@ function loadLevel(n) {
   platforms = L.platforms;
   finish = L.finish;
   spawn = L.spawn;
-  rats = L.rats.map(r => ({ x:r.x, w:r.w, h:r.h, speed:r.speed, dir:-1, platform: platforms[r.pi], y: platforms[r.pi].y - r.h }));
+  rats = L.rats.map(r => ({ x:r.x, ox:r.x, w:r.w, h:r.h, speed:r.speed, dir:-1, platform: platforms[r.pi], y: platforms[r.pi].y - r.h }));
+  traps = (L.traps || []).map(t => ({ ...t }));
+  hasTrap = false;
+  danmu = [];
   reset();
 }
 
@@ -273,7 +284,7 @@ function reset() {
   player.x = spawn.x; player.y = spawn.y - STAND_H; player.vx = 0; player.vy = 0;
   player.h = STAND_H; player.facing = 1; player.onGround = false; player.jumps = 0;
   player.crouching = false; player.squash = 1;
-  rats.forEach(r => { r.x = r.platform.x + 40; r.dir = -1; r.y = r.platform.y - r.h; });
+  rats.forEach(r => { r.x = r.ox; r.dir = -1; r.y = r.platform.y - r.h; });
   particles = [];
   tauntTimer = 0;
   state = 'play';
@@ -345,8 +356,20 @@ function update() {
   // 掉进污水
   if (player.y > 900) { catchByRat(); return; }
 
+  // 收集老鼠夹
+  for (let i = traps.length - 1; i >= 0; i--) {
+    const t = traps[i];
+    const tpx = player.x + player.w/2, tpy = player.y + player.h/2;
+    if ((tpx - t.x)**2 + (tpy - t.y)**2 < 34*34) {
+      traps.splice(i, 1);
+      hasTrap = true;
+      burst(t.x, t.y, '#ffd93d');
+    }
+  }
+
   // 老鼠
-  for (const r of rats) {
+  for (let i = rats.length - 1; i >= 0; i--) {
+    const r = rats[i];
     const rx = r.x + r.w/2, px = player.x + player.w/2;
     const playerOnThis = Math.abs((player.y + player.h) - r.platform.y) < 14
                       && player.x + player.w > r.platform.x - 20
@@ -355,7 +378,18 @@ function update() {
     r.x += r.dir * r.speed;
     if (r.x < r.platform.x) { r.x = r.platform.x; r.dir = 1; }
     if (r.x + r.w > r.platform.x + r.platform.w) { r.x = r.platform.x + r.platform.w - r.w; r.dir = -1; }
-    if (overlaps(player, r)) { catchByRat(); return; }
+    if (overlaps(player, r)) {
+      if (hasTrap) {
+        // 老鼠夹夹死老鼠！
+        rats.splice(i, 1);
+        hasTrap = false;
+        showDanmu('你用老鼠夹夹死了这只老鼠，你真牛逼');
+        burst(r.x + r.w/2, r.y + r.h/2, '#ff7ab0');
+        continue;
+      } else {
+        catchByRat(); return;
+      }
+    }
   }
 
   // 终点
@@ -370,6 +404,7 @@ function update() {
   animFrame++;
   if (tauntTimer > 0) tauntTimer--;
   updateParticles();
+  updateDanmu();
   updateCamera();
 }
 
@@ -383,6 +418,21 @@ function updateParticles() {
   for (let i = particles.length-1; i>=0; i--) {
     const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
     if (p.life <= 0) particles.splice(i,1);
+  }
+}
+function burst(x, y, color) {
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random()*Math.PI*2, sp = 1 + Math.random()*3;
+    particles.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 1.5, life:30, color });
+  }
+}
+function showDanmu(text) {
+  danmu.push({ text, x: cvs.width, y: 60 + Math.random()*50, life: 320 });
+}
+function updateDanmu() {
+  for (let i = danmu.length-1; i>=0; i--) {
+    const d = danmu[i]; d.x -= 2.4; d.life--;
+    if (d.life <= 0 || d.x < -600) danmu.splice(i,1);
   }
 }
 
@@ -468,6 +518,21 @@ function drawFinish() {
   ctx.restore();
 }
 
+function drawTraps() {
+  for (const t of traps) {
+    const x = t.x - cam.x, y = t.y - cam.y;
+    const b = Math.sin(performance.now()/250) * 3;
+    ctx.save();
+    ctx.translate(x, y + b);
+    ctx.globalAlpha = .5 + Math.sin(performance.now()/250)*.2;
+    ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.strokeStyle='#ffd93d'; ctx.lineWidth=2; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.font = '30px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🪤', 0, 0);
+    ctx.restore();
+  }
+}
+
 function drawLimb(x1, y1, x2, y2, color, w) {
   ctx.strokeStyle = color || '#33343c';
   ctx.lineWidth = w || 5;
@@ -536,6 +601,10 @@ function drawPlayer() {
   drawLimb(0, shoY, hr[0], hr[1], c, 5);   // 右臂
   drawLimb(0, shoY, 0, hipY, c, 7);        // 身体
   drawHead(0, headY, headR, headRot);      // 头
+  if (hasTrap) {                            // 头顶显示老鼠夹
+    ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🪤', 0, headY - headR - 15);
+  }
 
   ctx.restore();
 }
@@ -548,6 +617,18 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
+function drawDanmu() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 24px sans-serif';
+  for (const d of danmu) {
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.strokeText(d.text, d.x, d.y);
+    ctx.fillStyle = '#ffd93d';
+    ctx.fillText(d.text, d.x, d.y);
+  }
+}
+
 function draw() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, cvs.width, cvs.height);
@@ -555,9 +636,11 @@ function draw() {
   drawBackground();
   for (const p of platforms) drawPlatform(p);
   drawFinish();
+  drawTraps();
   for (const r of rats) drawRat(r);
   drawParticles();
   drawPlayer();
+  drawDanmu();
 }
 
 function loop() {
