@@ -50,11 +50,6 @@
   .avatar img { width:100%; height:100%; object-fit:cover; }
   #hint { position:fixed; left:50%; bottom:8px; transform:translateX(-50%); z-index:15;
     color:#9fb8a8; font-size:12px; }
-  /* 嘲讽/通关信息竖屏显示：横屏时把覆盖层转回竖屏 */
-  @media (orientation: landscape) {
-    .overlay { width:100vh; height:100vw; transform:rotate(-90deg);
-      transform-origin:top left; top:0; left:100vw; inset:auto; }
-  }
 </style>
 </head>
 <body>
