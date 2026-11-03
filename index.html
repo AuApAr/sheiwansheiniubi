@@ -571,36 +571,36 @@ function drawPlayer() {
 
   let hipY, shoY, headY, headR, headRot, fl, fr, hl, hr;
   if (pose === 'crouch') {
-    hipY = -16; shoY = -28; headY = -36; headR = 13; headRot = 0;
-    fl = [-7, 0]; fr = [7, 0]; hl = [-12, -12]; hr = [12, -12];
+    hipY = -12; shoY = -20; headY = -26; headR = 17; headRot = 0;
+    fl = [-8, 0]; fr = [8, 0]; hl = [-13, -10]; hr = [13, -10];
   } else if (pose === 'jump') {
-    hipY = -20; shoY = -38; headY = -48; headR = 15; headRot = 0;
-    fl = [-9, -8]; fr = [9, -8]; hl = [-10, -50]; hr = [10, -50];
+    hipY = -16; shoY = -24; headY = -40; headR = 20; headRot = 0;
+    fl = [-10, -6]; fr = [10, -6]; hl = [-11, -44]; hr = [11, -44];
   } else if (pose === 'dance') {
     const w = Math.sin(ph * 0.25);
-    hipY = -24 + w*2; shoY = -42 + w*3; headY = -52 + w*4; headR = 15;
+    hipY = -14 + w*2; shoY = -22 + w*3; headY = -40 + w*4; headR = 20;
     headRot = Math.sin(ph * 0.3) * 0.9 + (Math.floor(ph/14)%2 ? 0.25 : -0.25);
-    fl = [-6, 0]; fr = [6, 0];
-    hl = [-14 - w*6, -42 + w*6]; hr = [14 + w*6, -42 - w*6];
+    fl = [-8, 0]; fr = [8, 0];
+    hl = [-15 - w*6, -32 + w*6]; hr = [15 + w*6, -32 - w*6];
   } else {
     const run = pose === 'run';
     const swing = run ? Math.sin(ph * 0.35) : 0;
     const bob = run ? Math.abs(Math.sin(ph * 0.35)) * 2 : Math.sin(ph * 0.06) * 1;
-    hipY = -24 - bob; shoY = -42 - bob; headY = -52 - bob; headR = 15;
+    hipY = -14 - bob; shoY = -22 - bob; headY = -40 - bob; headR = 20;
     headRot = run ? Math.sin(ph * 0.35) * 0.05 : 0;
-    const ls = run ? swing * 9 : 0;
-    const as = run ? -swing * 9 : 0;
-    fl = [-6 - ls, 0]; fr = [6 + ls, 0];
-    hl = [-12 + as, -34]; hr = [12 - as, -34];
+    const ls = run ? swing * 8 : 0;
+    const as = run ? -swing * 8 : 0;
+    fl = [-7 - ls, 0]; fr = [7 + ls, 0];
+    hl = [-12 + as, -14]; hr = [12 - as, -14];
   }
 
   const c = '#33343c';
-  drawLimb(0, hipY, fl[0], fl[1], c, 5);   // 左腿
-  drawLimb(0, hipY, fr[0], fr[1], c, 5);   // 右腿
-  drawLimb(0, shoY, hl[0], hl[1], c, 5);   // 左臂
-  drawLimb(0, shoY, hr[0], hr[1], c, 5);   // 右臂
-  drawLimb(0, shoY, 0, hipY, c, 7);        // 身体
-  drawHead(0, headY, headR, headRot);      // 头
+  drawLimb(0, hipY, fl[0], fl[1], c, 6);   // 左腿
+  drawLimb(0, hipY, fr[0], fr[1], c, 6);   // 右腿
+  drawLimb(0, shoY, hl[0], hl[1], c, 6);   // 左臂
+  drawLimb(0, shoY, hr[0], hr[1], c, 6);   // 右臂
+  drawLimb(0, shoY, 0, hipY, c, 9);        // 身体（更粗）
+  drawHead(0, headY, headR, headRot);      // 头（更大）
   if (hasTrap) {                            // 头顶显示老鼠夹
     ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('🪤', 0, headY - headR - 15);
