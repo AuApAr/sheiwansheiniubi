@@ -567,7 +567,7 @@ function drawPlayer() {
 
   ctx.save();
   ctx.translate(p.x + p.w/2 - cam.x, p.y + p.h - cam.y);   // 脚底中心
-  ctx.scale(p.facing, 1);
+  ctx.scale(p.facing * 1.3, 1.3);                          // 整个火柴人放大 1.3 倍
 
   let hipY, shoY, headY, headR, headRot, fl, fr, hl, hr;
   if (pose === 'crouch') {
